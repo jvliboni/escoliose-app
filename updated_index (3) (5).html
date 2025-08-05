@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação de Escoliose - Hospital da Baleia</title>
+    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=dSb16AhAN0ySH0ZB82BaedHyMjFDTdXosiSylKmVMpS2MqdxPzIt4MU4OpuDV1mG5hA4csCY9vpzwr4ZsZH8EmJmVwibY88TGw2bFYCCzWVTJsGsM99zuo4yHXeBWftQQBgbHYOGwBmtU2f7qlQnueohgNo9tOj2ga429vs6O_zPvqmLO24MxRiP_M_YP4PS6Gt-i62z043QxymtgVM4urC0erg0gD1JGtpmGPJa5qUd2uRU0McBvMLEqwGsS4zh" charset="UTF-8"></script><script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=NuzBgZVWXsdZm9zMTb5efU1qSBB7msvIu-Q82ERXX8925hoLHTYWB_smPPe53NjDTXvq_6JW3ofoghYPyL21djiXLf877zczV26-hdH3VvjRkJ3DF0_zcdtXqLWaLH3W_zEInaq5s8r9svchmp14OwVLF-R9wiLd7sdDHamrM13VXI0oT6_JkRtfkvKi0fZKtLeO_v1wjCaEP4D22nehqIfHgluEbOtE0lBP4PDD1K50WezB01X_KXkmuEbAnp-A" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #00A859; /* Verde do Hospital da Baleia */
+            --secondary-color: #005A9C; /* Azul do Hospital da Baleia */
+            --light-gray: #f0f4f8;
+            --dark-gray: #374151;
+            --text-color: #1f2937;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--light-gray); }
+        .header { background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: auto; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #008f4b; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-secondary:hover { background-color: #004a80; }
+        .btn-outline { border: 1px solid var(--dark-gray); color: var(--dark-gray); }
+        .btn-outline:hover { background-color: #e5e7eb; }
+        #login-screen, #patient-selection-screen, #form-screen { display: none; }
+        .patient-list-item { transition: background-color 0.2s; border: 1px solid #e5e7eb; }
+        .patient-list-item:hover { background-color: #f9fafb; }
+        .accordion-header { cursor: pointer; }
+        .accordion-content { display: none; }
+        .accordion-header.active + .accordion-content { display: block; }
+        .form-section { background-color: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        input, select, textarea { background-color: #f9fafb; border: 1px solid #d1d5db; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 2px rgba(0, 168, 89, 0.3); }
+        .fab { position: fixed; bottom: 2rem; right: 2rem; }
+        .file-input-label {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 1rem; border: 2px dashed var(--primary-color);
+            border-radius: 0.5rem; cursor: pointer; background: #f9fafb; min-height: 80px;
+            transition: background .2s;
+        }
+        .file-input-label:hover { background: #e8f6ef; }
+        .file-name { font-size: 0.75rem; color: var(--secondary-color); margin-top: 8px; word-break: break-all; }
+        .image-preview { max-height: 60px; border-radius: 0.25rem; margin-top: 8px; border: 1px solid #e5e7eb; }
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--primary-color); color: white; padding: 1rem 2rem; border-radius: 1rem;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+            font-weight: 500; z-index: 1000; animation: fadeInUp .4s;
+        }
+        .toast.error { background-color: #ef4444; }
+        @keyframes fadeInUp { from { opacity:0; transform:translate(-50%,50px);} to {opacity:1; transform:translate(-50%,0);} }
+        /* Campos dinâmicos ocultos */
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="loading-indicator" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-24 w-24 border-t-2 border-b-2 border-white mx-auto"></div>
+            <p id="loading-message" class="text-white text-lg mt-4">Carregando...</p>
+        </div>
+    </div>
+
+    <div id="toast" style="display:none;" class="toast"></div>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center">
+             <svg class="mx-auto h-16 w-auto text-blue-600" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.3,10.2c0-1.5-0.1-2.9-0.4-4.3c-0.6-2.9-2.5-5.2-5.2-6.2C12.9-0.9,10.1-0.3,7.8,1.4C5.4,3.1,3.7,5.5,3.1,8.2 c-0.8,3.5,0.3, 7.1,2.8, 9.5c2.2,2.2,5.3,3.2,8.3,2.7c3.5-0.6,6.4-3.2,7.4-6.5C21.9,13.2,21.5,10.6,20.3,10.2z M13.8,16.7 c-0.2,0.3-0.5,0.5-0.9,0.6c-0.4,0-0.7-0.1-1-0.3c-0.3-0.2-0.5-0.5-0.6-0.8c-0.1-0.4,0-0.8,0.2-1.1c0.2-0.3,0.5-0.5,0.9-0.6 c0.4,0,0.7,0.1,1,0.3c0.3,0.2,0.5,0.5,0.6,0.8C13.9,15.9,13.9,16.3,13.8,16.7z M17.8,11.5c-0.1,0.2-0.3,0.4-0.5,0.5 c-0.2,0.1-0.5,0.2-0.8,0.1c-0.2-0.1-0.5-0.3-0.6-0.5c-0.1-0.2-0.2-0.5-0.1-0.8c0.1-0.2,0.3-0.4,0.5-0.5c0.2-0.1,0.5-0.2,0.8-0.1 c0.2,0.1,0.5,0.3,0.6,0.5C17.9,10.7,18,11,17.8,11.5z"/></svg>
+            <h1 class="text-2xl font-bold text-gray-700 mt-4">Acesso Restrito</h1>
+            <p class="text-gray-500 mt-2 mb-6">Insira a senha para continuar.</p>
+            <form id="login-form">
+                <input type="password" id="password-input" placeholder="Senha" class="w-full p-3 rounded-lg text-center" autocomplete="current-password">
+                <p id="login-error" class="text-red-500 text-sm mt-2 h-4"></p>
+                <button type="submit" class="btn-secondary w-full font-bold py-3 px-6 rounded-lg shadow-md mt-4">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TELA DE SELEÇÃO DE PACIENTES -->
+    <div id="patient-selection-screen">
+        <header class="header p-4">
+            <div class="container flex items-center gap-4">
+                <svg class="h-12 w-auto text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M20.3,10.2c0-1.5-0.1-2.9-0.4-4.3c-0.6-2.9-2.5-5.2-5.2-6.2C12.9-0.9,10.1-0.3,7.8,1.4C5.4,3.1,3.7,5.5,3.1,8.2 c-0.8,3.5,0.3, 7.1,2.8, 9.5c2.2,2.2,5.3,3.2,8.3,2.7c3.5-0.6,6.4-3.2,7.4-6.5C21.9,13.2,21.5,10.6,20.3,10.2z M13.8,16.7 c-0.2,0.3-0.5,0.5-0.9,0.6c-0.4,0-0.7-0.1-1-0.3c-0.3-0.2-0.5-0.5-0.6-0.8c-0.1-0.4,0-0.8,0.2-1.1c0.2-0.3,0.5-0.5,0.9-0.6 c0.4,0,0.7,0.1,1,0.3c0.3,0.2,0.5,0.5,0.6,0.8C13.9,15.9,13.9,16.3,13.8,16.7z M17.8,11.5c-0.1,0.2-0.3,0.4-0.5,0.5 c-0.2,0.1-0.5,0.2-0.8,0.1c-0.2-0.1-0.5-0.3-0.6-0.5c-0.1-0.2-0.2-0.5-0.1-0.8c0.1-0.2,0.3-0.4,0.5-0.5c0.2-0.1,0.5-0.2,0.8-0.1 c0.2,0.1,0.5,0.3,0.6,0.5C17.9,10.7,18,11,17.8,11.5z"/></svg>
+                <h1 class="text-2xl font-bold text-gray-700">Painel de Pacientes</h1>
+            </div>
+        </header>
+        <main class="container p-4">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <input type="text" id="search-patient" placeholder="Buscar paciente por nome..." class="w-full md:w-1/2 p-2 rounded-lg">
+                <button id="add-new-patient-btn" class="btn-primary w-full md:w-auto font-bold py-2 px-6 rounded-lg shadow-md transition-transform hover:scale-105">
+                    + Adicionar Novo Paciente
+                </button>
+            </div>
+            <div id="patient-list" class="space-y-3"></div>
+        </main>
+        <button id="export-db-btn" class="fab btn-secondary p-4 rounded-full shadow-lg transition-transform hover:scale-110" title="Exportar Banco de Dados">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+        </button>
+    </div>
+
+    <!-- TELA DO FORMULÁRIO -->
+    <div id="form-screen">
+        <header class="header p-4">
+            <div class="container flex items-center">
+                <button id="back-to-patients-btn" class="p-2 rounded-full hover:bg-gray-200 mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-700">Avaliação de Escoliose</h1>
+            </div>
+        </header>
+        <main class="container p-4">
+            <form id="scoliosis-form" class="space-y-6">
+                <input type="hidden" id="patientId" name="patientId">
+                
+                <!-- Seção Dados do Paciente -->
+                <div class="form-section">
+                    <div class="accordion-header p-4 flex justify-between items-center active">
+                        <h2 class="text-xl font-semibold">Dados do Paciente</h2>
+                        <svg class="w-6 h-6 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                    <div class="accordion-content p-4 border-t" style="display:block;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="nome" class="block text-sm font-medium">Nome Completo</label><input type="text" name="nome" id="nome" required class="w-full mt-1 p-2 rounded-md"></div>
+                            <div><label for="sexo" class="block text-sm font-medium">Sexo</label><select name="sexo" id="sexo" class="w-full mt-1 p-2 rounded-md"><option value="">Selecione</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select></div>
+                            <div><label for="idade" class="block text-sm font-medium">Idade</label><input type="number" name="idade" id="idade" class="w-full mt-1 p-2 rounded-md"></div>
+                            <div><label for="idade_percepcao_curva" class="block text-sm font-medium">Idade que percebeu a curvatura</label><input type="number" name="idade_percepcao_curva" id="idade_percepcao_curva" class="w-full mt-1 p-2 rounded-md"></div>
+                            <div><label for="tratamento_previo" class="block text-sm font-medium">Fez tratamento prévio?</label><select name="tratamento_previo" id="tratamento_previo" class="w-full mt-1 p-2 rounded-md"><option value="nao">Não</option><option value="sim">Sim</option></select></div>
+                            <div><label for="qual_tratamento_previo" class="block text-sm font-medium">Qual tratamento?</label><input type="text" name="qual_tratamento_previo" id="qual_tratamento_previo" class="w-full mt-1 p-2 rounded-md"></div>
+                            <div><label for="tempo_fila" class="block text-sm font-medium">Tempo na fila (meses)</label><input type="number" name="tempo_fila" id="tempo_fila" class="w-full mt-1 p-2 rounded-md"></div>
+                            <div><label for="hospital_referencia" class="block text-sm font-medium">Hospital de Referência</label><input type="text" name="hospital_referencia" id="hospital_referencia" class="w-full mt-1 p-2 rounded-md"></div>
+                        </div>
+                        <!-- Novo campo: Tipo de Escoliose e campos condicionais -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="tipo_escoliose" class="block text-sm font-medium">Tipo de escoliose</label>
+                                <select name="tipo_escoliose" id="tipo_escoliose" class="w-full mt-1 p-2 rounded-md">
+                                    <option value="">Selecione</option>
+                                    <option value="idiopatica">Idiopática</option>
+                                    <option value="neuromuscular">Neuromuscular</option>
+                                    <option value="congenita">Congênita</option>
+                                    <option value="sindromica">Sindrômica</option>
+                                    <option value="outra">Outra</option>
+                                </select>
+                            </div>
+                            <div id="sindrome-associada-field" class="hidden">
+                                <label for="sindrome_associada" class="block text-sm font-medium">Síndrome associada</label>
+                                <input type="text" name="sindrome_associada" id="sindrome_associada" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+                            <div id="outra-escoliose-field" class="hidden">
+                                <label for="outra_escoliose" class="block text-sm font-medium">Outro tipo de escoliose</label>
+                                <input type="text" name="outra_escoliose" id="outra_escoliose" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+        </div>
+        <!-- Campos de Classificação de Escoliose -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div>
+                <label for="classificacao_lenke" class="block text-sm font-medium">Classificação Lenke</label>
+                <input type="text" name="classificacao_lenke" id="classificacao_lenke" class="w-full mt-1 p-2 rounded-md">
+            </div>
+            <div id="classificacao-winter-field" class="hidden">
+                <label for="classificacao_winter" class="block text-sm font-medium">Classificação Winter</label>
+                <input type="text" name="classificacao_winter" id="classificacao_winter" class="w-full mt-1 p-2 rounded-md">
+            </div>
+            <div id="outra-classificacao-nome-field">
+                <label for="outra_classificacao_nome" class="block text-sm font-medium">Outra classificação (nome)</label>
+                <input type="text" name="outra_classificacao_nome" id="outra_classificacao_nome" class="w-full mt-1 p-2 rounded-md">
+            </div>
+        </div>
+        <!-- Campo para valor da outra classificação (aparece apenas se houver nome) -->
+        <div id="outra-classificacao-valor-field" class="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 hidden">
+            <div>
+                <label for="outra_classificacao_valor" class="block text-sm font-medium">Valor da classificação</label>
+                <input type="text" name="outra_classificacao_valor" id="outra_classificacao_valor" class="w-full mt-1 p-2 rounded-md">
+            </div>
+        </div>
+        <!-- Novos campos: Ângulos de Cobb e vértebras por curva -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <!-- Curva principal -->
+            <div>
+                <label for="angulo_cobb_principal" class="block text-sm font-medium">Ângulo de Cobb - curva principal</label>
+                <input type="number" name="angulo_cobb_principal" id="angulo_cobb_principal" class="w-full mt-1 p-2 rounded-md" step="any">
+                <div id="vertebras-cobb-principal-field" class="mt-2 hidden">
+                    <label for="vertebras_cobb_principal" class="block text-sm font-medium">Vértebras (curva principal)</label>
+                    <input type="text" name="vertebras_cobb_principal" id="vertebras_cobb_principal" class="w-full mt-1 p-2 rounded-md" placeholder="Ex.: T4–T12">
+                </div>
+            </div>
+            <!-- Curva secundária -->
+            <div>
+                <label for="angulo_cobb_secundaria" class="block text-sm font-medium">Ângulo de Cobb - curva secundária</label>
+                <input type="number" name="angulo_cobb_secundaria" id="angulo_cobb_secundaria" class="w-full mt-1 p-2 rounded-md" step="any">
+                <div id="vertebras-cobb-secundaria-field" class="mt-2 hidden">
+                    <label for="vertebras_cobb_secundaria" class="block text-sm font-medium">Vértebras (curva secundária)</label>
+                    <input type="text" name="vertebras_cobb_secundaria" id="vertebras_cobb_secundaria" class="w-full mt-1 p-2 rounded-md" placeholder="Ex.: T4–T12">
+                </div>
+            </div>
+            <!-- Curva terciária -->
+            <div>
+                <label for="angulo_cobb_terciaria" class="block text-sm font-medium">Ângulo de Cobb - curva terciária</label>
+                <input type="number" name="angulo_cobb_terciaria" id="angulo_cobb_terciaria" class="w-full mt-1 p-2 rounded-md" step="any">
+                <div id="vertebras-cobb-terciaria-field" class="mt-2 hidden">
+                    <label for="vertebras_cobb_terciaria" class="block text-sm font-medium">Vértebras (curva terciária)</label>
+                    <input type="text" name="vertebras_cobb_terciaria" id="vertebras_cobb_terciaria" class="w-full mt-1 p-2 rounded-md" placeholder="Ex.: T4–T12">
+                </div>
+            </div>
+        </div>
+        <!-- Campos: Ângulos de Cobb nas inclinações laterais -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div>
+                <label for="angulo_cobb_inclinacao_principal" class="block text-sm font-medium">Ângulo de Cobb (inclinação lateral) - curva principal</label>
+                <input type="number" name="angulo_cobb_inclinacao_principal" id="angulo_cobb_inclinacao_principal" class="w-full mt-1 p-2 rounded-md" step="any">
+            </div>
+            <div>
+                <label for="angulo_cobb_inclinacao_secundaria" class="block text-sm font-medium">Ângulo de Cobb (inclinação lateral) - curva secundária</label>
+                <input type="number" name="angulo_cobb_inclinacao_secundaria" id="angulo_cobb_inclinacao_secundaria" class="w-full mt-1 p-2 rounded-md" step="any">
+            </div>
+            <div>
+                <label for="angulo_cobb_inclinacao_terciaria" class="block text-sm font-medium">Ângulo de Cobb (inclinação lateral) - curva terciária</label>
+                <input type="number" name="angulo_cobb_inclinacao_terciaria" id="angulo_cobb_inclinacao_terciaria" class="w-full mt-1 p-2 rounded-md" step="any">
+            </div>
+        </div>
+        <!-- Fecha o conteúdo da seção Dados do Paciente -->
+        </div>
+    </div>
+
+                <!-- Seção Avaliação Ortopédica Pré-Cirúrgica -->
+                <div class="form-section">
+                    <div class="accordion-header p-4 flex justify-between items-center">
+                        <h2 class="text-xl font-semibold">Avaliação Ortopédica Pré-Cirúrgica</h2>
+                        <svg class="w-6 h-6 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                    <div class="accordion-content p-4 border-t space-y-4">
+                        <h3 class="font-semibold">Fotos Clínicas</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div><label class="file-input-label" for="pre_foto_frente"><span>Frente</span><img class="image-preview hidden" id="pre_foto_frente_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_foto_frente" id="pre_foto_frente" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pre_foto_lado_d"><span>Lado Direito</span><img class="image-preview hidden" id="pre_foto_lado_d_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_foto_lado_d" id="pre_foto_lado_d" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pre_foto_lado_e"><span>Lado Esquerdo</span><img class="image-preview hidden" id="pre_foto_lado_e_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_foto_lado_e" id="pre_foto_lado_e" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pre_foto_adams"><span>Teste de Adams</span><img class="image-preview hidden" id="pre_foto_adams_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_foto_adams" id="pre_foto_adams" class="hidden" accept="image/*"></div>
+                        </div>
+                        <h3 class="font-semibold pt-4">Radiografias</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div><label class="file-input-label" for="pre_rx_ap"><span>Panorâmica AP</span><img class="image-preview hidden" id="pre_rx_ap_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_rx_ap" id="pre_rx_ap" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pre_rx_perfil"><span>Panorâmica Perfil</span><img class="image-preview hidden" id="pre_rx_perfil_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_rx_perfil" id="pre_rx_perfil" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pre_rx_inc_d"><span>Inclinação Direita</span><img class="image-preview hidden" id="pre_rx_inc_d_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_rx_inc_d" id="pre_rx_inc_d" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pre_rx_inc_e"><span>Inclinação Esquerda</span><img class="image-preview hidden" id="pre_rx_inc_e_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pre_rx_inc_e" id="pre_rx_inc_e" class="hidden" accept="image/*"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção Avaliação Ortopédica Pós-Operatória -->
+                <div class="form-section">
+                    <div class="accordion-header p-4 flex justify-between items-center">
+                        <h2 class="text-xl font-semibold">Avaliação Ortopédica Pós-Operatória</h2>
+                        <svg class="w-6 h-6 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                    <div class="accordion-content p-4 border-t space-y-4">
+                        <h3 class="font-semibold">Fotos Clínicas</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div><label class="file-input-label" for="pos_foto_frente"><span>Frente</span><img class="image-preview hidden" id="pos_foto_frente_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pos_foto_frente" id="pos_foto_frente" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pos_foto_lado_d"><span>Lado Direito</span><img class="image-preview hidden" id="pos_foto_lado_d_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pos_foto_lado_d" id="pos_foto_lado_d" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pos_foto_lado_e"><span>Lado Esquerdo</span><img class="image-preview hidden" id="pos_foto_lado_e_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pos_foto_lado_e" id="pos_foto_lado_e" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pos_foto_adams"><span>Teste de Adams</span><img class="image-preview hidden" id="pos_foto_adams_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pos_foto_adams" id="pos_foto_adams" class="hidden" accept="image/*"></div>
+                        </div>
+                        <h3 class="font-semibold pt-4">Radiografias</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div><label class="file-input-label" for="pos_rx_ap"><span>Panorâmica AP</span><img class="image-preview hidden" id="pos_rx_ap_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pos_rx_ap" id="pos_rx_ap" class="hidden" accept="image/*"></div>
+                            <div><label class="file-input-label" for="pos_rx_perfil"><span>Panorâmica Perfil</span><img class="image-preview hidden" id="pos_rx_perfil_preview"/><span class="file-name"></span><svg class="w-6 h-6 text-green-500 hidden checkmark" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></label><input type="file" name="pos_rx_perfil" id="pos_rx_perfil" class="hidden" accept="image/*"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção Questionário SRS-30 -->
+                <div class="form-section">
+                    <div class="accordion-header p-4 flex justify-between items-center">
+                        <h2 class="text-xl font-semibold">Questionário SRS-30</h2>
+                        <svg class="w-6 h-6 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                    <div class="accordion-content p-4 border-t">
+                        <div id="srs-questions-container" class="space-y-8"></div>
+                    </div>
+                </div>
+
+                <!-- Nova Seção: Internação e Complicações -->
+                <div class="form-section">
+                    <div class="accordion-header p-4 flex justify-between items-center">
+                        <h2 class="text-xl font-semibold">Internação e Complicações</h2>
+                        <svg class="w-6 h-6 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                    <div class="accordion-content p-4 border-t space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="tempo_internacao_cti" class="block text-sm font-medium">Tempo de internação no CTI (dias)</label>
+                                <input type="number" name="tempo_internacao_cti" id="tempo_internacao_cti" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+                            <div>
+                                <label for="tempo_internacao_total" class="block text-sm font-medium">Tempo de internação total (dias)</label>
+                                <input type="number" name="tempo_internacao_total" id="tempo_internacao_total" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+                            <div>
+                                <label for="antibiotico_profilatico" class="block text-sm font-medium">Antibiótico profilático</label>
+                                <input type="text" name="antibiotico_profilatico" id="antibiotico_profilatico" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+                            <div>
+                                <label for="tempo_antibiotico" class="block text-sm font-medium">Tempo de uso do antibiótico (dias)</label>
+                                <input type="number" name="tempo_antibiotico" id="tempo_antibiotico" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="complicacao_14dias" class="block text-sm font-medium">Complicação pós-operatória em 14 dias</label>
+                                <input type="text" name="complicacao_14dias" id="complicacao_14dias" class="w-full mt-1 p-2 rounded-md" placeholder="Se sim, descreva">
+                            </div>
+                            <div>
+                                <label for="complicacao_1mes" class="block text-sm font-medium">Complicação pós-operatória em 1 mês</label>
+                                <input type="text" name="complicacao_1mes" id="complicacao_1mes" class="w-full mt-1 p-2 rounded-md" placeholder="Se sim, descreva">
+                            </div>
+                            <div>
+                                <label for="complicacao_3meses" class="block text-sm font-medium">Complicação pós-operatória em 3 meses</label>
+                                <input type="text" name="complicacao_3meses" id="complicacao_3meses" class="w-full mt-1 p-2 rounded-md" placeholder="Se sim, descreva">
+                            </div>
+                            <div>
+                                <label for="complicacao_6meses" class="block text-sm font-medium">Complicação pós-operatória em 6 meses</label>
+                                <input type="text" name="complicacao_6meses" id="complicacao_6meses" class="w-full mt-1 p-2 rounded-md" placeholder="Se sim, descreva">
+                            </div>
+                            <div>
+                                <label for="complicacao_1ano" class="block text-sm font-medium">Complicação pós-operatória em 1 ano</label>
+                                <input type="text" name="complicacao_1ano" id="complicacao_1ano" class="w-full mt-1 p-2 rounded-md" placeholder="Se sim, descreva">
+                            </div>
+                            <div>
+                                <label for="complicacao_internacao" class="block text-sm font-medium">Se houve complicação, houve necessidade de internação?</label>
+                                <input type="text" name="complicacao_internacao" id="complicacao_internacao" class="w-full mt-1 p-2 rounded-md" placeholder="Sim ou Não">
+                            </div>
+                            <div>
+                                <label for="tempo_complicacao_internacao" class="block text-sm font-medium">Tempo de internação por complicação (dias)</label>
+                                <input type="number" name="tempo_complicacao_internacao" id="tempo_complicacao_internacao" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+                            <div>
+                                <label for="complicacao_cti" class="block text-sm font-medium">Houve necessidade de CTI por complicação?</label>
+                                <input type="text" name="complicacao_cti" id="complicacao_cti" class="w-full mt-1 p-2 rounded-md" placeholder="Sim ou Não">
+                            </div>
+                            <div>
+                                <label for="tempo_complicacao_cti" class="block text-sm font-medium">Tempo de CTI por complicação (dias)</label>
+                                <input type="number" name="tempo_complicacao_cti" id="tempo_complicacao_cti" class="w-full mt-1 p-2 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-5">
+                    <div class="flex justify-between items-center">
+                        <span id="form-status" class="text-center font-medium"></span>
+                        <button type="submit" class="btn-primary font-bold py-3 px-8 rounded-lg shadow-lg">
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <!-- Script principal -->
+    <script>
+        // Atualizado com a nova URL do Apps Script fornecida pelo usuário
+        // URL atualizada do Web App do Google Apps Script, fornecida pelo usuário.
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLowTA-le47KfsvqfBbEZFI3YmmTw5modFK2JvaH3S_L4uY7zuklcA-tf-yY3jVR9z/exec";
+        const SECRET_KEY = "baleia-escoliose-secret-key-2025";
+        const LOGIN_PASSWORD = "ORCA";
+
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingMessage = document.getElementById('loading-message');
+        const loginScreen = document.getElementById('login-screen');
+        const patientSelectionScreen = document.getElementById('patient-selection-screen');
+        const formScreen = document.getElementById('form-screen');
+        const patientList = document.getElementById('patient-list');
+        const addNewPatientBtn = document.getElementById('add-new-patient-btn');
+        const backToPatientsBtn = document.getElementById('back-to-patients-btn');
+        const scoliosisForm = document.getElementById('scoliosis-form');
+        const formStatus = document.getElementById('form-status');
+        const srsQuestionsContainer = document.getElementById('srs-questions-container');
+        const searchPatientInput = document.getElementById('search-patient');
+        const exportDbBtn = document.getElementById('export-db-btn');
+        const loginForm = document.getElementById('login-form');
+        const passwordInput = document.getElementById('password-input');
+        const loginError = document.getElementById('login-error');
+        const toast = document.getElementById('toast');
+
+        // Campos dinâmicos de escoliose
+        const tipoEscolioseSelect = document.getElementById('tipo_escoliose');
+        const sindromeField = document.getElementById('sindrome-associada-field');
+        const outraField = document.getElementById('outra-escoliose-field');
+        const winterField = document.getElementById('classificacao-winter-field');
+
+        const ALL_FORM_FIELDS = [
+            'patientId', 'nome', 'sexo', 'idade', 'idade_percepcao_curva', 'tratamento_previo',
+            'qual_tratamento_previo', 'tempo_fila', 'hospital_referencia',
+            'tipo_escoliose', 'sindrome_associada', 'outra_escoliose',
+    'classificacao_lenke', 'classificacao_winter',
+    'outra_classificacao_nome', 'outra_classificacao_valor',
+    'angulo_cobb_principal', 'angulo_cobb_secundaria', 'angulo_cobb_terciaria',
+    // Campos para vértebras específicas de cada curva
+    'vertebras_cobb_principal', 'vertebras_cobb_secundaria', 'vertebras_cobb_terciaria',
+    'angulo_cobb_inclinacao_principal', 'angulo_cobb_inclinacao_secundaria', 'angulo_cobb_inclinacao_terciaria',
+            'pre_foto_frente', 'pre_foto_lado_d', 'pre_foto_lado_e', 'pre_foto_adams',
+            'pre_rx_ap', 'pre_rx_perfil', 'pre_rx_inc_d', 'pre_rx_inc_e',
+            'pos_foto_frente', 'pos_foto_lado_d', 'pos_foto_lado_e', 'pos_foto_adams',
+            'pos_rx_ap', 'pos_rx_perfil',
+            'tempo_internacao_cti', 'tempo_internacao_total', 'antibiotico_profilatico', 'tempo_antibiotico',
+            'complicacao_14dias', 'complicacao_1mes', 'complicacao_3meses', 'complicacao_6meses', 'complicacao_1ano',
+            'complicacao_internacao', 'tempo_complicacao_internacao', 'complicacao_cti', 'tempo_complicacao_cti'
+        ];
+        for (let i = 1; i <= 30; i++) {
+            ALL_FORM_FIELDS.push(`srs${i}`);
+        }
+
+        // Timeouts
+        const DEFAULT_TIMEOUT = 10000; // 10 segundos
+        // Tempo máximo para requisições que enviam arquivos grandes (como upload de imagens).
+        const UPLOAD_TIMEOUT = 60000; // 60 segundos
+        function fetchWithTimeout(url, options = {}, timeout = DEFAULT_TIMEOUT) {
+            return Promise.race([
+                fetch(url, options),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Requisição excedeu o tempo limite')), timeout)
+                )
+            ]);
+        }
+
+        // --- LÓGICA DE LOGIN ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            loginError.textContent = '';
+            const enteredPassword = passwordInput.value.trim();
+            if (enteredPassword.toUpperCase() === LOGIN_PASSWORD) {
+                showScreen('patients');
+                synchronizeWithCloud();
+            } else {
+                loginError.textContent = 'Senha incorreta.';
+                passwordInput.value = '';
+            }
+        });
+
+        // --- NAVEGAÇÃO E UI ---
+        function showScreen(screenName) {
+            loginScreen.style.display = screenName === 'login' ? 'flex' : 'none';
+            patientSelectionScreen.style.display = screenName === 'patients' ? 'block' : 'none';
+            formScreen.style.display = screenName === 'form' ? 'block' : 'none';
+        }
+
+        function showLoading(message) {
+            loadingMessage.textContent = message;
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingIndicator.classList.add('hidden');
+        }
+
+        function showToast(message, isSuccess = true) {
+            toast.textContent = message;
+            toast.className = `toast ${isSuccess ? '' : 'error'}`;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        addNewPatientBtn.addEventListener('click', () => showForm());
+        backToPatientsBtn.addEventListener('click', () => {
+            showScreen('patients');
+            loadPatientList();
+        });
+
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.classList.toggle('active');
+                const content = header.nextElementSibling;
+                content.style.display = content.style.display === 'block' ? 'none' : 'block';
+                const icon = header.querySelector('svg');
+                icon.classList.toggle('rotate-180');
+            });
+        });
+
+        // --- BANCO DE DADOS LOCAL ---
+        const localDB = {
+            getPatients: () => {
+                try {
+                    return JSON.parse(localStorage.getItem('patients')) || {};
+                } catch (e) {
+                    console.error("Erro ao ler o banco de dados local:", e);
+                    return {};
+                }
+            },
+            savePatient: (id, data) => {
+                const patients = localDB.getPatients();
+                const existing = patients[id] || { syncStatus: 'pending' };
+                patients[id] = { ...existing, data, lastUpdated: new Date().toISOString() };
+                localStorage.setItem('patients', JSON.stringify(patients));
+            },
+            deletePatient: (id) => {
+                const patients = localDB.getPatients();
+                delete patients[id];
+                localStorage.setItem('patients', JSON.stringify(patients));
+            },
+            updateSyncStatus: (id, status, driveUrls = {}) => {
+                const patients = localDB.getPatients();
+                if (patients[id]) {
+                    patients[id].syncStatus = status;
+                    patients[id].data = { ...patients[id].data, ...driveUrls };
+                    localStorage.setItem('patients', JSON.stringify(patients));
+                }
+            },
+            overwriteLocalDB: (cloudData) => {
+                 localStorage.setItem('patients', JSON.stringify(cloudData));
+            }
+        };
+
+        // --- LÓGICA DE PACIENTES ---
+        function loadPatientList() {
+            const patients = localDB.getPatients();
+            const searchTerm = searchPatientInput.value.toLowerCase();
+            patientList.innerHTML = '';
+            const filteredPatients = Object.entries(patients).filter(([id, patient]) =>
+                (patient.data.nome || '').toLowerCase().includes(searchTerm)
+            );
+            if (filteredPatients.length === 0) {
+                patientList.innerHTML = '<p class="text-gray-500 text-center">Nenhum paciente encontrado.</p>';
+                return;
+            }
+            filteredPatients.forEach(([id, patient]) => {
+                let syncIcon, syncTitle;
+                switch (patient.syncStatus) {
+                    case 'synced':
+                        syncIcon = `<svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" /></svg>`;
+                        syncTitle = "Sincronizado";
+                        break;
+                    case 'failed':
+                         syncIcon = `<svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>`;
+                         syncTitle = "Falha na sincronização";
+                         break;
+                    default:
+                        syncIcon = `<svg class="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>`;
+                        syncTitle = "Pendente";
+                }
+                const listItem = document.createElement('div');
+                listItem.className = 'patient-list-item bg-white p-4 rounded-lg flex justify-between items-center';
+                listItem.innerHTML = `
+                    <div class="flex-grow">
+                        <p class="font-bold text-lg">${patient.data.nome || 'Paciente sem nome'}</p>
+                        <p class="text-sm text-gray-500">Atualizado em: ${new Date(patient.lastUpdated).toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="download-photos-btn btn-outline p-2 rounded-md" title="Baixar Fotos"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                        <button class="edit-patient-btn btn-secondary p-2 rounded-md text-white" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg></button>
+                        <button class="delete-patient-btn bg-red-500 hover:bg-red-700 p-2 rounded-md text-white" title="Deletar"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        <div title="${syncTitle}">${syncIcon}</div>
+                    </div>
+                `;
+                listItem.querySelector('.edit-patient-btn').addEventListener('click', (e) => { e.stopPropagation(); showForm(id); });
+                listItem.querySelector('.download-photos-btn').addEventListener('click', (e) => { e.stopPropagation(); downloadPatientPhotos(id); });
+                listItem.querySelector('.delete-patient-btn').addEventListener('click', (e) => { e.stopPropagation(); handleDeletePatient(e.currentTarget, id); });
+                patientList.appendChild(listItem);
+            });
+        }
+
+        async function handleDeletePatient(button, patientId) {
+            if (button.dataset.confirming) {
+                // Usuário confirmou exclusão: realiza exclusão local e remota
+                showLoading('Deletando paciente...');
+                try {
+                    // Solicita exclusão na nuvem
+                    const response = await fetchWithTimeout(SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({ action: 'deletePatient', patientId }),
+                    }, UPLOAD_TIMEOUT);
+                    if (!response.ok) throw new Error('Falha na requisição de exclusão.');
+                    const result = await response.json();
+                    if (result.status !== 'success') throw new Error(result.message || 'Falha ao deletar.');
+                    // Remove do banco local
+                    localDB.deletePatient(patientId);
+                    loadPatientList();
+                    showToast('Paciente deletado com sucesso!');
+                } catch (err) {
+                    console.error('Erro ao deletar paciente:', err);
+                    showToast('Erro ao deletar paciente. Tente novamente.', false);
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                // Primeira etapa: solicitar confirmação
+                button.dataset.confirming = true;
+                button.innerHTML = 'Confirmar?';
+                button.classList.add('bg-red-700');
+                setTimeout(() => {
+                    // Remove estado de confirmação após 3 segundos
+                    delete button.dataset.confirming;
+                    button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`;
+                    button.classList.remove('bg-red-700');
+                }, 3000);
+            }
+        }
+
+        searchPatientInput.addEventListener('input', loadPatientList);
+
+        function showForm(patientId = null) {
+            showScreen('form');
+            scoliosisForm.reset();
+            document.querySelectorAll('.file-name').forEach(el => el.textContent = '');
+            document.querySelectorAll('.checkmark').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.file-input-label span:first-child').forEach(el => el.classList.remove('hidden'));
+            document.querySelectorAll('.image-preview').forEach(img => { img.src = ''; img.classList.add('hidden'); });
+            formStatus.textContent = '';
+            document.getElementById('patientId').value = patientId || `patient_${new Date().getTime()}`;
+
+            // Esconder campos condicionais por padrão
+            sindromeField.classList.add('hidden');
+            outraField.classList.add('hidden');
+
+            if (patientId) {
+                const patientData = localDB.getPatients()[patientId]?.data;
+                if (patientData) {
+                    Object.keys(patientData).forEach(key => {
+                        const element = scoliosisForm.elements[key];
+                        if (element && element.type === 'file') {
+                            const urlKey = `${key}_url`;
+                            if (patientData[urlKey]) {
+                                const label = element.previousElementSibling;
+                                label.querySelector('.checkmark').classList.remove('hidden');
+                                label.querySelector('span:first-child').classList.add('hidden');
+                                const previewEl = document.getElementById(`${key}_preview`);
+                                if (previewEl) {
+                                    previewEl.src = patientData[urlKey];
+                                    previewEl.classList.remove('hidden');
+                                }
+                            }
+                        } else if (element) {
+                           if(element.type === 'radio') {
+                               const radio = document.querySelector(`input[name="${key}"][value="${patientData[key]}"]`);
+                               if(radio) radio.checked = true;
+                           } else {
+                               element.value = patientData[key];
+                           }
+                        }
+                    });
+                }
+            }
+            // Ajusta a exibição de campos condicionais baseado no valor atual de tipo_escoliose
+            const tipoValue = scoliosisForm.tipo_escoliose.value;
+            // Chama via window para garantir que a função esteja disponível globalmente
+            if (typeof window.updateEscolioseFields === 'function') {
+                window.updateEscolioseFields(tipoValue);
+            }
+            // Atualiza campos dinâmicos de vértebras conforme ângulos preenchidos e de outra classificação
+            if (typeof window.updateCobbVertebraFields === 'function') {
+                window.updateCobbVertebraFields();
+            }
+            if (typeof window.updateOutraClassificacaoFields === 'function') {
+                window.updateOutraClassificacaoFields();
+            }
+            document.querySelectorAll('.accordion-header').forEach((header, index) => {
+                const isActive = index === 0;
+                header.classList.toggle('active', isActive);
+                header.nextElementSibling.style.display = isActive ? 'block' : 'none';
+                header.querySelector('svg').classList.toggle('rotate-180', isActive);
+            });
+        }
+
+        // --- LÓGICA DO FORMULÁRIO ---
+        scoliosisForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoading('Salvando localmente...');
+            if(!scoliosisForm.nome.value) {
+                showToast("O nome do paciente é obrigatório!", false);
+                hideLoading();
+                return;
+            }
+            const formData = new FormData(scoliosisForm);
+            const patientId = formData.get('patientId');
+            const data = {};
+            const filePromises = [];
+            for (const [key, value] of formData.entries()) {
+                if (value instanceof File && value.size > 0) {
+                    filePromises.push(fileToBase64(value).then(base64 => ({ key, value: base64 })));
+                } else if (!(value instanceof File)) {
+                    data[key] = value;
+                }
+            }
+            const fileResults = await Promise.all(filePromises);
+            fileResults.forEach(result => { data[result.key] = result.value; });
+            localDB.savePatient(patientId, data);
+            showToast('Salvo localmente com sucesso!');
+            setTimeout(() => {
+                hideLoading();
+                showScreen('patients');
+                loadPatientList();
+                synchronizePatient(patientId);
+            }, 1000);
+        });
+
+        // --- SINCRONIZAÇÃO E DOWNLOAD ---
+        async function synchronizeWithCloud() {
+            showLoading('Sincronizando com a nuvem...');
+            try {
+                const response = await fetchWithTimeout(SCRIPT_URL, {
+                    method: 'POST',
+                    // Utiliza text/plain para evitar requisições preflight de CORS.
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'fetchAllData' }),
+                });
+                if (!response.ok) throw new Error('Falha ao buscar dados da nuvem.');
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                const cloudPatients = {};
+                result.data.forEach(patientData => {
+                    const patientId = patientData.patientId || `cloud_${Date.now()}_${Math.random()}`;
+                    cloudPatients[patientId] = {
+                        syncStatus: 'synced',
+                        data: patientData,
+                        lastUpdated: new Date().toISOString()
+                    };
+                });
+                localDB.overwriteLocalDB(cloudPatients);
+                loadPatientList();
+                showToast('Sincronização concluída com sucesso!');
+            } catch (error) {
+                console.error("Falha na sincronização inicial:", error);
+                showToast("Não foi possível sincronizar com a nuvem. Usando dados locais.", false);
+                loadPatientList();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function synchronizePatient(patientId) {
+            const patient = localDB.getPatients()[patientId];
+            if (!patient) return;
+            try {
+                const filesToUpload = [];
+                const dataForSheet = {};
+                ALL_FORM_FIELDS.forEach(field => {
+                    dataForSheet[field] = patient.data[field] || '';
+                });
+                Object.entries(patient.data).forEach(([key, value]) => {
+                    if (value && typeof value === 'string' && value.startsWith('data:image')) {
+                        filesToUpload.push({
+                            formFieldName: key,
+                            fileData: value.split(',')[1],
+                            mimeType: value.match(/:(.*?);/)[1],
+                            fileName: `${key}.png`
+                        });
+                    }
+                });
+                // Usa um tempo maior para upload de arquivos grandes
+                const fileUploadResponse = await fetchWithTimeout(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'uploadFiles', files: filesToUpload }),
+                }, UPLOAD_TIMEOUT);
+                if (!fileUploadResponse.ok) throw new Error(`Falha no upload de arquivos: ${fileUploadResponse.statusText}`);
+                const fileUploadResult = await fileUploadResponse.json();
+                if (fileUploadResult.status !== 'success') throw new Error(fileUploadResult.message);
+                const driveUrls = {};
+                fileUploadResult.fileUrls.forEach(f => {
+                    dataForSheet[f.formFieldName] = f.url;
+                    driveUrls[`${f.formFieldName}_url`] = f.url;
+                });
+                const sheetResponse = await fetchWithTimeout(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'writeData', data: dataForSheet }),
+                }, UPLOAD_TIMEOUT);
+                if (!sheetResponse.ok) throw new Error(`Falha ao salvar na planilha: ${sheetResponse.statusText}`);
+                const sheetResult = await sheetResponse.json();
+                if (sheetResult.status !== 'success') throw new Error(sheetResult.message);
+                localDB.updateSyncStatus(patientId, 'synced', driveUrls);
+            } catch (error) {
+                console.error(`Falha na sincronização para ${patientId}:`, error);
+                localDB.updateSyncStatus(patientId, 'failed');
+            } finally {
+                if (patientSelectionScreen.style.display === 'block') loadPatientList();
+            }
+        }
+
+        function downloadPatientPhotos(patientId) {
+            const patientData = localDB.getPatients()[patientId]?.data;
+            if (!patientData) { showToast('Nenhuma foto encontrada.', false); return; }
+            let photosFound = false;
+            Object.entries(patientData).forEach(([key, value]) => {
+                if (key.endsWith('_url') && value) {
+                    photosFound = true;
+                    window.open(value, '_blank');
+                } else if (value && typeof value === 'string' && value.startsWith('data:image')) {
+                    photosFound = true;
+                    const link = document.createElement('a');
+                    link.href = value;
+                    link.download = `${patientData.nome}_${key}.png`;
+                    link.click();
+                }
+            });
+            if (!photosFound) showToast('Nenhuma foto encontrada para este paciente.', false);
+        }
+
+        exportDbBtn.addEventListener('click', async () => {
+            showLoading('Exportando dados da nuvem...');
+            try {
+                const response = await fetchWithTimeout(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'fetchSheetData' }),
+                }, UPLOAD_TIMEOUT);
+                if (!response.ok) throw new Error('Falha ao buscar dados para exportação.');
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                if (result.data.length === 0) {
+                    showToast("Nenhum dado na nuvem para exportar.", false);
+                    return;
+                }
+                const headers = result.headers;
+                let csvContent = headers.join(',') + '\r\n';
+                result.data.forEach(rowObject => {
+                    csvContent += headers.map(header => `"${(rowObject[header] || '').toString().replace(/"/g, '""')}"`).join(',') + '\r\n';
+                });
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "export_pacientes_escoliose.csv";
+                link.click();
+            } catch (error) {
+                console.error("Erro na exportação:", error);
+                showToast("Erro ao exportar dados. Tente novamente.", false);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // --- INICIALIZAÇÃO E CONTEÚDO SRS-30 ---
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                if (!file) {
+                    resolve('');
+                    return;
+                }
+                // Lê o arquivo como DataURL para criar a imagem temporária
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Cria uma imagem para redimensionar e comprimir
+                    const img = new Image();
+                    img.onload = () => {
+                        // Define o tamanho máximo para a maior dimensão.
+                        // Reduzido de 1024 para 800 para melhorar desempenho e reduzir tamanho dos arquivos.
+                        const MAX_DIMENSION = 800;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > MAX_DIMENSION) {
+                                height = height * (MAX_DIMENSION / width);
+                                width = MAX_DIMENSION;
+                            }
+                        } else {
+                            if (height > MAX_DIMENSION) {
+                                width = width * (MAX_DIMENSION / height);
+                                height = MAX_DIMENSION;
+                            }
+                        }
+                        // Desenha a imagem redimensionada em um canvas
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        // Converte o canvas em JPEG com qualidade reduzida.
+                        // A qualidade foi reduzida de 0.75 para 0.6 para gerar imagens menores e agilizar o salvamento.
+                        canvas.toBlob(blob => {
+                            const reader2 = new FileReader();
+                            reader2.readAsDataURL(blob);
+                            reader2.onload = () => resolve(reader2.result);
+                            reader2.onerror = error => reject(error);
+                        }, 'image/jpeg', 0.6);
+                    };
+                    img.onerror = () => {
+                        // Se houver erro ao carregar a imagem, retorna a string original
+                        resolve(reader.result);
+                    };
+                    img.src = reader.result;
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function init() {
+            // Configura campos dinâmicos de escoliose
+            tipoEscolioseSelect.addEventListener('change', (e) => {
+                updateEscolioseFields(e.target.value);
+            });
+            // Atualiza campos condicionais de tipo de escoliose
+            function updateEscolioseFields(value) {
+                // Campo de síndrome associada para escoliose sindrômica
+                if (value === 'sindromica') {
+                    sindromeField.classList.remove('hidden');
+                } else {
+                    sindromeField.classList.add('hidden');
+                }
+                // Campo de "outra" escoliose
+                if (value === 'outra') {
+                    outraField.classList.remove('hidden');
+                } else {
+                    outraField.classList.add('hidden');
+                }
+                // Campo de classificação Winter (apenas para escoliose congênita)
+                if (value === 'congenita') {
+                    winterField.classList.remove('hidden');
+                } else {
+                    winterField.classList.add('hidden');
+                }
+            }
+            window.updateEscolioseFields = updateEscolioseFields;
+
+            // --- Campos dinâmicos para ângulos de Cobb e vértebras ---
+            const anguloCobbPrincipalInput = document.getElementById('angulo_cobb_principal');
+            const anguloCobbSecundariaInput = document.getElementById('angulo_cobb_secundaria');
+            const anguloCobbTerciariaInput = document.getElementById('angulo_cobb_terciaria');
+            const vertebrasCobbPrincipalField = document.getElementById('vertebras-cobb-principal-field');
+            const vertebrasCobbSecundariaField = document.getElementById('vertebras-cobb-secundaria-field');
+            const vertebrasCobbTerciariaField = document.getElementById('vertebras-cobb-terciaria-field');
+            function updateCobbVertebraFields() {
+                // Mostra ou esconde os campos de vértebras dependendo se há valor no ângulo correspondente
+                if (anguloCobbPrincipalInput.value !== '') {
+                    vertebrasCobbPrincipalField.classList.remove('hidden');
+                } else {
+                    vertebrasCobbPrincipalField.classList.add('hidden');
+                }
+                if (anguloCobbSecundariaInput.value !== '') {
+                    vertebrasCobbSecundariaField.classList.remove('hidden');
+                } else {
+                    vertebrasCobbSecundariaField.classList.add('hidden');
+                }
+                if (anguloCobbTerciariaInput.value !== '') {
+                    vertebrasCobbTerciariaField.classList.remove('hidden');
+                } else {
+                    vertebrasCobbTerciariaField.classList.add('hidden');
+                }
+            }
+            // Adiciona listeners para atualizar imediatamente ao digitar
+            anguloCobbPrincipalInput.addEventListener('input', updateCobbVertebraFields);
+            anguloCobbSecundariaInput.addEventListener('input', updateCobbVertebraFields);
+            anguloCobbTerciariaInput.addEventListener('input', updateCobbVertebraFields);
+            window.updateCobbVertebraFields = updateCobbVertebraFields;
+
+            // Executa ao carregar para garantir que os campos de vértebras estejam corretamente ocultos ou visíveis
+            updateCobbVertebraFields();
+
+            // --- Campos dinâmicos para outra classificação ---
+            const outraClassNomeInput = document.getElementById('outra_classificacao_nome');
+            const outraClassValorField = document.getElementById('outra-classificacao-valor-field');
+            function updateOutraClassificacaoFields() {
+                // Exibe o campo de valor somente se houver nome da outra classificação
+                if (outraClassNomeInput.value && outraClassNomeInput.value.trim() !== '') {
+                    outraClassValorField.classList.remove('hidden');
+                } else {
+                    outraClassValorField.classList.add('hidden');
+                }
+            }
+            outraClassNomeInput.addEventListener('input', updateOutraClassificacaoFields);
+            window.updateOutraClassificacaoFields = updateOutraClassificacaoFields;
+
+            // Executa ao carregar para garantir que o campo de valor da outra classificação esteja oculto se o nome estiver vazio
+            updateOutraClassificacaoFields();
+
+            // Gerencia pré-visualização de arquivos
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const label = e.target.previousElementSibling;
+                    const fileNameEl = label.querySelector('.file-name');
+                    const checkmarkEl = label.querySelector('.checkmark');
+                    const textEl = label.querySelector('span:first-child');
+                    const previewEl = label.querySelector('.image-preview');
+                    if (e.target.files.length > 0) {
+                        fileNameEl.textContent = e.target.files[0].name;
+                        if(checkmarkEl) checkmarkEl.classList.add('hidden');
+                        if(textEl) textEl.classList.remove('hidden');
+                        if(previewEl) {
+                            previewEl.src = URL.createObjectURL(e.target.files[0]);
+                            previewEl.classList.remove('hidden');
+                        }
+                    } else {
+                        fileNameEl.textContent = '';
+                        if(previewEl) {
+                            previewEl.src = '';
+                            previewEl.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+
+            // Preenche questionário SRS-30
+            srsQuestionsContainer.innerHTML = '';
+            const srsQuestions = [
+                { q: "1. Qual das seguintes respostas melhor descreve a intensidade de dores sentida nos últimos 6 meses?", o: [{t:"Nenhuma",v:1},{t:"Leve",v:2},{t:"Moderada",v:3},{t:"Forte",v:4}] },
+                { q: "2. Qual das seguintes respostas melhor descreve a intensidade de dores sentida no último mês?", o: [{t:"Nenhuma",v:1},{t:"Leve",v:2},{t:"Moderada",v:3},{t:"Forte",v:4}] },
+                { q: "3. Você tem se sentido muito nervoso nos últimos 6 meses?", o: [{t:"Nunca",v:5},{t:"Poucas vezes",v:4},{t:"Às vezes",v:3},{t:"Maior parte das vezes",v:2},{t:"O tempo todo",v:1}] },
+                { q: "4. Se você tivesse que passar o resto da sua vida com as costas no estado em que elas estão hoje, como se sentiria?", o: [{t:"Muito contente",v:5},{t:"Contente",v:4},{t:"Nem contente nem descontente",v:3},{t:"Descontente",v:2},{t:"Muito descontente",v:1}] },
+                { q: "5. Qual é o seu nível de atividade física atual?", o: [{t:"Acamado / cadeira de rodas",v:1},{t:"Pouquíssima atividade",v:2},{t:"Trabalhos leves",v:3},{t:"Trabalho e esportes moderados",v:4},{t:"Atividades normais sem restrições",v:5}] },
+                { q: "6. Como você acha que as suas roupas ficam em você?", o: [{t:"Muito bem",v:5},{t:"Bem",v:4},{t:"Razoável",v:3},{t:"Mal",v:2},{t:"Muito mal",v:1}] },
+                { q: "7. Durante os últimos 6 meses você tem se sentido tão baixo ao ponto de nada o conseguir alegrar?", o: [{t:"Muitas vezes",v:1},{t:"Várias vezes",v:2},{t:"Algumas vezes",v:3},{t:"Raramente",v:4},{t:"Nunca",v:5}] },
+                { q: "8. Você sente dores nas costas quando está descansando?", o: [{t:"Muitas vezes",v:1},{t:"Várias vezes",v:2},{t:"Algumas vezes",v:3},{t:"Raramente",v:4},{t:"Nunca",v:5}] },
+                { q: "9. Atualmente qual é o seu nível de atividade no trabalho / escola?", o: [{t:"100% normal",v:5},{t:"75% normal",v:4},{t:"50% normal",v:3},{t:"25% normal",v:2},{t:"0% normal",v:1}] },
+                { q: "10. Qual das seguintes respostas melhor descreve a aparência do seu tronco?", o: [{t:"Muito boa",v:5},{t:"Boa",v:4},{t:"Razoável",v:3},{t:"Pobre",v:2},{t:"Muito pobre",v:1}] },
+                { q: "11. Qual das seguintes respostas melhor descreve a quantidade e os medicamentos que você toma por causa das suas costas?", o: [{t:"Nenhum",v:1},{t:"Não-narcótico 1x/semana ou menos",v:2},{t:"Não-narcótico diariamente",v:3},{t:"Narcótico semanalmente ou menos",v:4},{t:"Narcótico diariamente",v:5}] },
+                { q: "12. Você acha que as suas costas limitam a sua capacidade de fazer coisas de casa?", o: [{t:"Nunca",v:5},{t:"Raramente",v:4},{t:"Às vezes",v:3},{t:"Várias vezes",v:2},{t:"Muitas vezes",v:1}] },
+                { q: "13. Você tem se sentido calmo e tranquilo durante os últimos 6 meses?", o: [{t:"O tempo todo",v:5},{t:"Maior parte das vezes",v:4},{t:"Às vezes",v:3},{t:"Poucas vezes",v:2},{t:"Nunca",v:1}] },
+                { q: "14. Você acha que a sua condição física afeta as suas relações pessoais?", o: [{t:"De maneira alguma",v:5},{t:"Raramente",v:4},{t:"Ligeiramente",v:3},{t:"Moderadamente",v:2},{t:"Gravemente",v:1}] },
+                { q: "15. Você e/ou a sua família está tendo algumas dificuldades financeiras por causa das suas costas?", o: [{t:"Muito",v:1},{t:"Moderadamente",v:2},{t:"Ligeiramente",v:3},{t:"Raramente",v:4},{t:"De maneira alguma",v:5}] },
+                { q: "16. Durante os últimos 6 meses você se sentiu triste e melancólico?", o: [{t:"Nunca",v:5},{t:"Raramente",v:4},{t:"Às vezes",v:3},{t:"Várias vezes",v:2},{t:"Muitas vezes",v:1}] },
+                { q: "17. Durante os últimos 3 meses você faltou no trabalho ou na escola por causa das dores nas costas, se sim quantas vezes?", o: [{t:"0",v:5},{t:"1",v:4},{t:"2",v:3},{t:"3",v:2},{t:"4 ou mais",v:1}] },
+                { q: "18. Você sai mais ou menos que os seus amigos?", o: [{t:"Muito mais",v:5},{t:"Mais",v:4},{t:"Igual",v:3},{t:"Menos",v:2},{t:"Muito menos",v:1}] },
+                { q: "19. Você se sente atraente apesar das suas condições físicas?", o: [{t:"Sim, muito",v:5},{t:"Sim",v:4},{t:"Nem uma coisa nem outra",v:3},{t:"Não, não muito",v:2},{t:"Não, de maneira alguma",v:1}] },
+                { q: "20. Você tem sido uma pessoa feliz durante os últimos 6 meses?", o: [{t:"Nunca",v:1},{t:"Poucas vezes",v:2},{t:"Às vezes",v:3},{t:"Maior parte das vezes",v:4},{t:"O tempo todo",v:5}] },
+                { q: "21. Você está satisfeito com os resultados do seu tratamento?", o: [{t:"Muito satisfeito",v:5},{t:"Satisfeito",v:4},{t:"Nem satisfeito nem insatisfeito",v:3},{t:"Insatisfeito",v:2},{t:"Muito insatisfeito",v:1}] },
+                { q: "22. Você aceitaria o mesmo tipo de tratamento se voltasse a ter a mesma condição física?", o: [{t:"Sim com certeza",v:5},{t:"Provavelmente sim",v:4},{t:"Não tenho certeza",v:3},{t:"Provavelmente não",v:2},{t:"Não de maneira alguma",v:1}] },
+                { q: "23. Numa escala de 1 a 9, que nota você daria à sua própria imagem?", o: [{t:"1",v:1},{t:"2",v:2},{t:"3",v:3},{t:"4",v:4},{t:"5",v:5},{t:"6",v:6},{t:"7",v:7},{t:"8",v:8},{t:"9",v:9}] },
+                { q: "24. O que acha da sua nova aparência agora, comparado com antes do tratamento?", o: [{t:"Muito melhor",v:5},{t:"Melhor",v:4},{t:"Igual",v:3},{t:"Pior",v:2},{t:"Muito pior",v:1}] },
+                { q: "25. O tratamento modificou as suas funções e atividades diárias?", o: [{t:"Melhorou",v:3},{t:"Não mudou",v:2},{t:"Piorou",v:1}] },
+                { q: "26. O tratamento mudou a sua capacidade para aproveitar os esportes e hobbies?", o: [{t:"Melhorou",v:3},{t:"Não mudou",v:2},{t:"Piorou",v:1}] },
+                { q: "27. O tratamento ___ as dores nas suas costas?", o: [{t:"Melhorou",v:3},{t:"Não mudou",v:2},{t:"Piorou",v:1}] },
+                { q: "28. O tratamento mudou a sua confiança nas suas relações pessoais com outras pessoas?", o: [{t:"Melhorou",v:3},{t:"Não mudou",v:2},{t:"Piorou",v:1}] },
+                { q: "29. O tratamento mudou o jeito de as outras pessoas olharem para você?", o: [{t:"Muito melhor",v:5},{t:"Melhor",v:4},{t:"Igual",v:3},{t:"Pior",v:2},{t:"Muito pior",v:1}] },
+                { q: "30. A imagem que você faz de si próprio mudou depois do seu tratamento?", o: [{t:"Melhorou",v:3},{t:"Não mudou",v:2},{t:"Piorou",v:1}] }
+            ];
+            srsQuestions.forEach((item, index) => {
+                const name = `srs${index + 1}`;
+                const optionsHtml = item.o.map(opt => `<label class="flex items-center"><input type="radio" name="${name}" value="${opt.v}" class="form-radio h-4 w-4 text-indigo-600 bg-gray-100 border-gray-300"><span class="ml-2">${opt.t}</span></label>`).join('');
+                const questionHtml = `<div class="srs-question"><p class="font-medium text-gray-700">${item.q}</p><div class="mt-2 ${item.o.length > 5 ? 'flex flex-wrap gap-x-4 gap-y-2' : 'srs-options-grid'}">${optionsHtml}</div></div>`;
+                srsQuestionsContainer.innerHTML += questionHtml;
+            });
+            showScreen('login');
+        }
+
+        init();
+    </script>
+</body>
+</html>
